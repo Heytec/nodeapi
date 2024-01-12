@@ -8,9 +8,9 @@ import {
 import { mockUsers } from "../utils/constants.mjs";
 import { createUserValidationSchema } from "../utils/validationSchemas.mjs";
 import { resolveIndexByUserId } from "../utils/middlewares.mjs";
-// import { User } from "../mongoose/schemas/user.mjs";
-// import { hashPassword } from "../utils/helpers.mjs";
-//import { createUserHandler, getUserByIdHandler } from "../handlers/users.mjs";
+import { User } from "../mongoose/schemas/user.mjs";
+import { hashPassword } from "../utils/helpers.mjs";
+import { createUserHandler, getUserByIdHandler } from "../handlers/users.mjs";
 
 const router = Router();
 
@@ -23,7 +23,11 @@ router.get(
 		.isLength({ min: 3, max: 10 })
 		.withMessage("Must be at least 3-10 characters"),
 	(request, response) => {
-		
+		request.sessionStore.get(request.session.id, (err, sessionData) => {
+			if (err) {
+				throw err;
+			}
+		});
 		const result = validationResult(request);
 		const {
 			query: { filter, value },
@@ -36,12 +40,12 @@ router.get(
 	}
 );
 
-router.get("/api/users/:id", resolveIndexByUserId);
+router.get("/api/users/:id", resolveIndexByUserId, getUserByIdHandler);
 
 router.post(
 	"/api/users",
 	checkSchema(createUserValidationSchema),
-	
+	createUserHandler
 );
 
 router.put("/api/users/:id", resolveIndexByUserId, (request, response) => {
